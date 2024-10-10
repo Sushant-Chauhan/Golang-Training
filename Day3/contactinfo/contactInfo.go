@@ -1,65 +1,101 @@
-// contactinfo.go
-
 package contactinfo
 
-import "errors"
+import (
+	"errors"
+)
 
-// ContactInfo represents the details like phone number, email, etc.
-type ContactInfo struct {
-	IsActive        bool   // Tracks if the contact info is active
-	ContactInfoID   int    // Unique ID for each contact info
-	ContactInfoType string // Type of contact info (e.g., "Phone", "Email")
-	ContactInfoValue string // The actual value (e.g., "123-456-7890", "email@example.com")
+// CONTACTINFORMATION STRUCTURE
+type ContactInformation struct {
+	ContactInfoID    int
+	ContactInfoType  string
+	ContactInfoValue string
+	IsActive         bool
 }
 
-// Constructor for creating new ContactInfo
-func NewContactInfo(contactInfoID int, infoType, value string) (*ContactInfo, error) {
-	// Validation of input
-	if infoType == "" || value == "" {
-		return nil, errors.New("contact info type or value cannot be empty")
-	}
-
-	// Create the ContactInfo object
-	newContactInfo := &ContactInfo{
-		IsActive:        true,
-		ContactInfoID:   contactInfoID,
-		ContactInfoType: infoType,
-		ContactInfoValue: value,
-	}
-
-	return newContactInfo, nil
+// GET CONTACT INFO ID
+func (contactinfo *ContactInformation) GetContactInfoID() int {
+	return contactinfo.ContactInfoID
 }
 
-// Function to update contact info
-func (ci *ContactInfo) UpdateContactInfo(parameter string, newValue interface{}) error {
-	// Check if contact info is active
-	if !ci.IsActive {
-		return errors.New("cannot update inactive contact info")
-	}
+// GET CONTACT INFO STATUS
+func (contactinfo *ContactInformation) GetContactInfoStatus() bool {
+	return contactinfo.IsActive
+}
 
+// CREATE NEW CONTACT INFORMATION
+func CreateContactInfo(contactInfoType, contactInfoValue string, contactInfoID int) (*ContactInformation, error) {
+	err := validateContactInfo(contactInfoType, contactInfoValue)
+	if err != nil {
+		return nil, err
+	}
+	tempContactInfo := &ContactInformation{
+		ContactInfoID:    contactInfoID,
+		ContactInfoType:  contactInfoType,
+		ContactInfoValue: contactInfoValue,
+		IsActive:         true,
+	}
+	return tempContactInfo, nil
+}
+
+// READ CONTACT INFORMATION
+func GetContactInfo(contactInfoID int, contactInfos []*ContactInformation) (*ContactInformation, error) {
+	for _, contactInfo := range contactInfos {
+		if contactInfo.ContactInfoID == contactInfoID && contactInfo.IsActive {
+			return contactInfo, nil
+		}
+	}
+	return nil, errors.New("no such contact information id found")
+}
+
+// UPDATE CONTACT INFORMATION
+func (contactInfo *ContactInformation) UpdateContactInfo(parameter string, newValue interface{}) error {
 	switch parameter {
-	case "type":
-		// Update type of contact info
-		if newValueStr, ok := newValue.(string); ok && newValueStr != "" {
-			ci.ContactInfoType = newValueStr
-		} else {
-			return errors.New("invalid value for contact info type")
-		}
-	case "value":
-		// Update value of contact info
-		if newValueStr, ok := newValue.(string); ok && newValueStr != "" {
-			ci.ContactInfoValue = newValueStr
-		} else {
-			return errors.New("invalid value for contact info value")
-		}
+	case "Contact Information Type":
+		return contactInfo.updateContactInfoType(newValue)
+	case "Contact Information Value":
+		return contactInfo.updateContactInfoValue(newValue)
 	default:
-		return errors.New("invalid parameter to update")
+		return errors.New("no such parameter found")
 	}
-
-	return nil
 }
 
-//  contact info as inactive 
-func (ci *ContactInfo) DeactivateContactInfo() {
-	ci.IsActive = false
+// UPDATE CONTACT INFO TYPE
+func (contactInfo *ContactInformation) updateContactInfoType(newValue interface{}) error {
+	if value, ok := newValue.(string); ok {
+		if value == "" {
+			return errors.New("contact information type cannot be empty")
+		}
+		if value == "phone" && len(contactInfo.ContactInfoValue) != 10 {
+			return errors.New("phone number must be 10 digits")
+		}
+		contactInfo.ContactInfoType = value
+		return nil
+	}
+	return errors.New("invalid contact information type, expected a string")
+}
+
+// UPDATE CONTACT INFO VALUE
+func (contactInfo *ContactInformation) updateContactInfoValue(newValue interface{}) error {
+	if value, ok := newValue.(string); ok {
+		if value == "" {
+			return errors.New("contact information value cannot be empty")
+		}
+		if contactInfo.ContactInfoType == "phone" && len(value) != 10 {
+			return errors.New("phone number must be 10 digits")
+		}
+		contactInfo.ContactInfoValue = value
+		return nil
+	}
+	return errors.New("invalid contact information value, expected a string")
+}
+
+// VALIDATE CONTACT INFORMATION
+func validateContactInfo(contactInfoType, contactInfoValue string) error {
+	if contactInfoType == "" || contactInfoValue == "" {
+		return errors.New("contact information type and value cannot be empty")
+	}
+	if contactInfoType == "phone" && len(contactInfoValue) != 10 {
+		return errors.New("phone number must be 10 digits")
+	}
+	return nil
 }
