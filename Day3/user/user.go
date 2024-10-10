@@ -183,16 +183,19 @@ func (u *User) DeleteUser(targetUserID int) error {
   
 //1._________ Create Contact _________ 
 func (u *User) CreateContact(firstname, lastname string) error {
-	if !u.IsActive {
-		return errors.New("only active users can create contacts")
+	if u.IsAdmin || !u.IsActive {
+		return errors.New("only active Staff can create contacts")
 	}
-	contact := &contact.Contact{
-		ContactID: userID,
-		Firstname: firstname,
-		Lastname:  lastname,
-		IsActive:  true,
+	contactid:=0
+	if len(u.Contacts)!=0{
+		contactid=u.Contacts[len(u.Contacts)-1].ContactID
+		contactid++
 	}
-	u.Contacts = append(u.Contacts, contact)
+	newcontact,err := contact.NewContact(firstname, lastname,contactid)
+	if err!=nil{
+		return err
+	}
+	u.Contacts = append(u.Contacts, newcontact)
 	return nil
 }
 
@@ -219,27 +222,28 @@ func (u *User) UpdateContact(contactID int, field, newValue string) error {
 			break
 		}
 	}
-
+	
 	if targetContact == nil {
 		return errors.New("contact not found")
 	}
+	return targetContact.UpdateContact(contactID, parameter, newValue, u.Contacts)
 
-	// Update based on field
-	switch field {
-	case "Firstname":
-		targetContact.Firstname = newValue
-	case "Lastname":
-		targetContact.Lastname = newValue
-	case "IsActive":
-		if newValue == "true" {
-			targetContact.IsActive = true
-		} else {
-			targetContact.IsActive = false
-		}
-	default:
-		return errors.New("invalid field to update")
-	}
-	return nil
+	// // Update based on field
+	// switch field {
+	// case "Firstname":
+	// 	targetContact.Firstname = newValue
+	// case "Lastname":
+	// 	targetContact.Lastname = newValue
+	// case "IsActive":
+	// 	if newValue == "true" {
+	// 		targetContact.IsActive = true
+	// 	} else {
+	// 		targetContact.IsActive = false
+	// 	}
+	// default:
+	// 	return errors.New("invalid field to update")
+	// }
+	// return nil
 }
 
 
@@ -257,6 +261,9 @@ func (u *User) DeleteContact(contactID int) error {
 		}
 	}
 	return errors.New("contact not found")
+	if err := targetContact.DeleteContact(); err != nil { //Actual delete contact logic in contact package
+		return err
+	}
 }
 
 
@@ -285,9 +292,8 @@ var contactInfoIDCounter int = 1
 
 // 1. Create Contact Details
 func (u *User) CreateContactInfo(contactID int, infoType, value string) error {
-	// Validate input
-	if infoType == "" || value == "" {
-		return errors.New("contact info type or value cannot be empty")
+	if u.IsAdmin || !u.IsActive {
+		return errors.New("only active Staff can create contact details")
 	}
 
 	var targetContact *contact.Contact
@@ -297,28 +303,20 @@ func (u *User) CreateContactInfo(contactID int, infoType, value string) error {
 			break
 		}
 	}
-
 	if targetContact == nil {
 		return errors.New("contact not found")
 	}
 
-	// Create new contact info
-	newContactInfo := &contactinfo.ContactInfo{
-		ContactInfoID:   contactInfoIDCounter,
-		ContactInfoType: infoType,
-		ContactInfoValue: value,
-		IsActive:        true,
-	}
-
-	contactInfoIDCounter++
-
-	targetContact.ContactInfos = append(targetContact.ContactInfos, newContactInfo)
-
-	return nil
+	return targetContact.CreateContactInfo(infoType, value) 
+	//actual create contactinfo logic in contactinfo package, contact is validated in contact package
 }
 
-// 2. Read Contact Details
-func (u *User) ReadContactInfo(contactID int, infoID int) (*contactinfo.ContactInfo, error) {
+
+// Read Contact Details
+func (u *User) GetContactInfo(contactID int, infoID int) (*contactinfo.ContactInfo, error) {
+	if u.IsAdmin || !u.IsActive {
+		return nil, errors.New("only active Staff can read contact details")
+	}
 	var targetContact *contact.Contact
 	for _, c := range u.Contacts {
 		if c.ContactID == contactID {
@@ -331,17 +329,18 @@ func (u *User) ReadContactInfo(contactID int, infoID int) (*contactinfo.ContactI
 		return nil, errors.New("contact not found")
 	}
 
-	for _, info := range targetContact.ContactInfos {
-		if info.ContactInfoID == infoID && info.IsActive {
-			return info, nil
-		}
-	}
-
-	return nil, errors.New("contact info not found or inactive")
+	return targetContact.GetContactInfo(infoID)    ///package
 }
-
-// 3. Update Contact Details
+//update contact info
 func (u *User) UpdateContactInfo(contactID int, infoID int, parameter string, newValue interface{}) error {
+	if u.IsAdmin || !u.IsActive {
+		return errors.New("only active Staff can update contact infos")
+	}
+
+	if err := validateContactInfoParams(contactID, infoID, parameter); err != nil {
+		return err
+	}
+
 	var targetContact *contact.Contact
 	for _, c := range u.Contacts {
 		if c.ContactID == contactID {
@@ -354,33 +353,17 @@ func (u *User) UpdateContactInfo(contactID int, infoID int, parameter string, ne
 		return errors.New("contact not found")
 	}
 
-	for _, info := range targetContact.ContactInfos {
-		if info.ContactInfoID == infoID && info.IsActive {
-			switch parameter {
-			case "type":
-				if newValueStr, ok := newValue.(string); ok && newValueStr != "" {
-					info.ContactInfoType = newValueStr
-				} else {
-					return errors.New("invalid value for contact info type")
-				}
-			case "value":
-				if newValueStr, ok := newValue.(string); ok && newValueStr != "" {
-					info.ContactInfoValue = newValueStr
-				} else {
-					return errors.New("invalid value for contact info value")
-				}
-			default:
-				return errors.New("invalid parameter to update")
-			}
-			return nil
-		}
-	}
-
-	return errors.New("contact info not found or inactive")
+	return targetContact.UpdateContactInfo(infoID, parameter, newValue)  //from another package
 }
 
-// 4. Delete Contact Details
+
+//delete contact info
 func (u *User) DeleteContactInfo(contactID int, infoID int) error {
+	if u.IsAdmin || !u.IsActive {
+		return errors.New("only active Staff can delete contact infos")
+	}
+
+	// Find the target contact from the user's contacts
 	var targetContact *contact.Contact
 	for _, c := range u.Contacts {
 		if c.ContactID == contactID {
@@ -393,13 +376,6 @@ func (u *User) DeleteContactInfo(contactID int, infoID int) error {
 		return errors.New("contact not found")
 	}
 
-	// Find the contact info by ID and set its IsActive flag to false
-	for _, info := range targetContact.ContactInfos {
-		if info.ContactInfoID == infoID && info.IsActive {
-			info.IsActive = false
-			return nil
-		}
-	}
-
-	return errors.New("contact info not found or already inactive")
+	// Call the delete logic from the contact package
+	return targetContact.DeleteContactInfo(infoID)
 }
