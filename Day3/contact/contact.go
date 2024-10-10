@@ -43,74 +43,90 @@ func NewContact(contactID int, firstname, lastname string, isActive bool, contac
 	return newContact, nil
 }
 
-// Update the contact's details - first name, last name, or IsActive status
-func (c *Contact) UpdateContact(parameter string, newValue interface{}) error {
- 	if !c.IsActive {
-		return errors.New("cannot update inactive contact")
-	}
 
-	// Update based on the parameter
+func (contact *Contact) CreateContactInfo(infoType, value string) {
+	infoID := 0
+
+	if len(contact.ContactInfos) != 0 {
+		infoID = contact.ContactInfos[len(contact.ContactInfos)-1].ContactInfoID
+		infoID++
+	}
+	tempContactInfo := contactinfo.NewContactInfo(infoType, value, infoID)
+	contact.ContactInfos = append(contact.ContactInfos, tempContactInfo)
+}
+
+
+func (contact *Contact) GetContactID() int {	return contact.ContactID }
+
+func (contact *Contact) GetActivityStatus() bool { return contact.IsActive }
+ 
+func (contact *Contact) GetContactInfo(infoID int) (*contactinfo.ContactInfo, error) {
+	if !contact.IsActive {
+		return nil, errors.New("contact is inactive")
+	}
+	for _, info := range contact.ContactInfos {
+		if info.ContactInfoID == infoID && info.IsActive {
+			return info, nil
+		}
+	}
+	return nil, errors.New("contact info not found")
+}
+
+// UPDATION
+func (contact *Contact) UpdateContact(parameter string, newValue interface{}) error {
 	switch parameter {
-	case "firstname":
-		if newFirstname, ok := newValue.(string); ok && newFirstname != "" {
-			c.Firstname = newFirstname
-		} else {
-			return errors.New("invalid value for first name")
+	case "Firstname":
+		if value, ok := newValue.(string); ok {
+			if value == "" {
+				return errors.New("first name cannot be empty")
+			}
+			contact.Firstname = value
+			return nil
 		}
-	case "lastname":
-		if newLastname, ok := newValue.(string); ok && newLastname != "" {
-			c.Lastname = newLastname
-		} else {
-			return errors.New("invalid value for last name")
+		return errors.New("expected a string for first name")
+
+	case "Lastname":
+		if value, ok := newValue.(string); ok {
+			if value == "" {
+				return errors.New("last name cannot be empty")
+			}
+			contact.Lastname = value
+			return nil
 		}
-	case "isActive":
-		if newIsActive, ok := newValue.(bool); ok {
-			c.IsActive = newIsActive
-		} else {
-			return errors.New("invalid value for isActive status")
-		}
+		return errors.New("expected a string for last name")
+
 	default:
-		return errors.New("invalid parameter to update")
-	}
-
-	return nil
-}
-
-// Deactivate a contact (soft delete)
-func (c *Contact) DeactivateContact() {
-	c.IsActive = false
-	for _, info := range c.ContactInfos {
-		info.DeactivateContactInfo() // Deactivate all associated contact details
+		return errors.New("parameter not recognized")
 	}
 }
 
-// Add new contact info to the contact
-func (c *Contact) AddContactInfo(info *contactinfo.ContactInfo) error {
-	if !c.IsActive {
-		return errors.New("cannot add contact info to inactive contact")
+func (contact *Contact) UpdateContactInfo(infoID int, parameter string, newValue interface{}) error {
+	for _, info := range contact.ContactInfos {
+		if info.ContactInfoID == infoID && info.IsActive {
+			return info.UpdateContactInfo(parameter, newValue)
+		}
 	}
-
-	// Append the new contact info to the list
-	c.ContactInfos = append(c.ContactInfos, info)
-	return nil
+	return errors.New("contact info not found")
 }
 
-// Remove (deactivate) a contact info from the contact
-func (c *Contact) RemoveContactInfo(contactInfoID int) error {
-	for _, info := range c.ContactInfos {
-		if info.ContactInfoID == contactInfoID && info.IsActive {
-			info.DeactivateContactInfo()
+// DELETION
+func (contact *Contact) DeleteContactInfo(infoID int) error {
+	if !contact.IsActive {
+		return errors.New("contact is inactive")
+	}
+	for _, info := range contact.ContactInfos {
+		if info.ContactInfoID == infoID && info.IsActive {
+			info.IsActive = false
 			return nil
 		}
 	}
-
-	return errors.New("contact info not found or already inactive")
+	return errors.New("contact info not found")
 }
 
-// Print contact details (for demonstration)
-func (c *Contact) PrintContactDetails() {
-	fmt.Printf("Contact ID: %d\nName: %s %s\nActive: %t\n", c.ContactID, c.Firstname, c.Lastname, c.IsActive)
-	for _, info := range c.ContactInfos {
-		fmt.Printf("  Contact Info: [%d] %s: %s (Active: %t)\n", info.ContactInfoID, info.ContactInfoType, info.ContactInfoValue, info.IsActive)
+func validateUserInfo(firstname, lastname string) error {
+	if firstname == "" || lastname == "" {
+		return errors.New("first name or last name cannot be empty")
 	}
+	return nil
 }
+
