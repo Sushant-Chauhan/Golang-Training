@@ -59,7 +59,7 @@ func (ci *ContactInfo) UpdateContactInfo(parameter string, newValue interface{})
 	return nil
 }
 
-// Mark contact info as inactive (soft delete)
+//  contact info as inactive 
 func (ci *ContactInfo) DeactivateContactInfo() {
 	ci.IsActive = false
 }
