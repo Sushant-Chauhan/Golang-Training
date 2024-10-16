@@ -1,0 +1,71 @@
+/bankingApp
+├── main.go             # Entry point of the application
+├── /admin              # Admin-related functionality
+│   ├── admin.go        # Admin struct and methods
+├── /customer           # Customer-related functionality
+│   ├── customer.go     # Customer struct and methods
+│   ├── passbook.go     # Passbook struct and methods
+├── /account            # Account-related functionality
+│   ├── account.go      # Account struct and methods
+│   ├── transaction.go  # Transaction struct and methods
+├── /bank               # Bank-related functionality
+│   ├── bank.go         # Bank struct and methods
+│   ├── ledger.go       # Ledger struct and methods
+
+
+
+
+Bank: bank's information like ---  Bank_ID, Full_Name, Abbreviation.
+   ↓ 
+Account:  Stores the balance and is associated with a specific bank and customer  --- Account_No , Bank , Balance  
+   ↑
+Customer: Stores customer information, including personal details and a slice of Account --- Customer_id , First_Name, Last_Name , Total_Balance
+ 
+
+
+Relationships b/w these entities are:
+-------------------------------------
+
+Each Customer can have multiple Accounts.
+Each Account is associated with one Bank.
+
+
+Methods for Customer:
+ - Deposit(accountID int, amount float64): Deposits money into a specific account.
+ - Withdraw(accountID int, amount float64): Withdraws money from a specific account, provided there are sufficient funds.
+ - Transfer(fromAccountID, toAccountID int, amount float64): Transfers money between two accounts, either internally or externally.
+ - GetTotalBalance() float64: Returns the sum of all account balances [ saving account + FD account etc. acc ]
+ - GetAccountBalance(accountID int) float64: Returns the balance of a specific account.
+
+
+
+Class Diagram : 
+
+
+
+------------------               -----------------
+|     Bank       |               |   Customer    |
+------------------               -----------------
+| BankID         | 1            *| CustomerID    |
+| FullName       |---------------| FirstName     |
+| Abbreviation   |               | LastName      |
+------------------               | TotalBalance  |
+                                  |---------------|
+                                  | +Deposit()    |
+                                  | +Withdraw()   |
+                                  | +Transfer()   |
+                                  | +GetBalance() |
+                                  -----------------
+                                           1
+                                            |
+                                            |
+                                            *
+                                  ------------------
+                                  |    Account     |
+                                  ------------------
+                                  | AccountNo      |
+                                  | Balance        |
+                                  |----------------|
+                                  | +Credit()      |
+                                  | +Debit()       |
+                                  ------------------
