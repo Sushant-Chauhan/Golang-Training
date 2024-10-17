@@ -17,45 +17,104 @@ type credential struct {
 }
 
 func main() {
-	router := mux.NewRouter()                                      //create a new Gorilla Mux router using mux.NewRouter()    ( allows defining - 	URL routes and associating them with handler functions)
-	router.HandleFunc("/api/v1/mux/{id}", muxDemo).Methods("POST") //POST requests - it trigger  muxDemo handler function. {id}- route parameter
+	router := mux.NewRouter()                                                    //create a new Gorilla Mux router using mux.NewRouter()    ( allows defining - 	URL routes and associating them with handler functions)
+	router.HandleFunc("/api/v1/mux/{id}", muxDemo).Methods("POST", "GET", "PUT") //Handle POST, GET, and PUT requests - it trigger  muxDemo handler function. {id}- route parameter
+
 	fmt.Println("Server is running on port 4000...")
 	http.ListenAndServe(":4000", router) //starts the HTTP server on port 4000, serving requests using the router.
 }
 
+var credentials = make(map[string]*credential) //// A global map to store credentials indexed by ID.
+
 // muxDemo function - core of the API logic. It handles request and response
 func muxDemo(w http.ResponseWriter, r *http.Request) { // body , headers, routeParams, queryparam
 
-	//1. Reading the Body
-	var cred = &credential{}                    //request body (which is expected to be JSON) is decoded into the cred struct, storing the credentials (Username, Password) sent by the client.
-	err := json.NewDecoder(r.Body).Decode(cred) //if the body is not valid JSON
-	if err != nil {
-		panic(err.Error())
+	routeParams := mux.Vars(r)
+	id := routeParams["id"] // Extractin ID from route parameters and using it as key in map
+
+	switch r.Method {
+	case "POST":
+		// Reading the body and decoding it into a credential struct.
+		var cred = &credential{}
+		err := json.NewDecoder(r.Body).Decode(cred)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		// Store the credentials in the map using the ID as the key.
+		credentials[id] = cred
+		// fmt.Println("Received POST request with:", cred)
+
+	case "GET":
+		// retrieve the credentials using the ID.
+		if cred, exists := credentials[id]; exists {
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(cred)
+		} else {
+			http.Error(w, "Credentials not found", http.StatusNotFound)
+		}
+
+	case "PUT":
+		// Reading the body and decoding it into a credential struct.
+		var cred = &credential{}
+		err := json.NewDecoder(r.Body).Decode(cred) // Decode JSON body into cred struct
+		if err != nil {
+			panic(err.Error())
+		}
+
+		// Update the credentials in the map.
+		credentials[id] = cred
+		// fmt.Println("Received PUT request with:", cred)
+
+	default:
+		http.Error(w, "Unsupported request method", http.StatusMethodNotAllowed)
+		return
 	}
 
 	// 2. Reading Headers
-	headers := r.Header //Reading Headers - contains meta-information about the request, like authentication tokens, content type, etc.
+	// headers := r.Header //Reading Headers - contains meta-information about the request, like authentication tokens, content type, etc.
 
 	// 3. Extracting Route Parameters
-	routeParams := mux.Vars(r)
+	// routeParams := mux.Vars(r)
 
 	// 4. Reading Query Parameters - Appears after the ? in the URL.
 	queryParams := r.URL.Query()
 	fmt.Println("Received request with query parameters:", queryParams)
 
 	// 5. Printing Information
-	fmt.Println("headers>>>", headers)
-	fmt.Println("routeParams>>>", routeParams)
-	fmt.Println("queryParams>>>", queryParams)
+	// fmt.Println("headers ---", headers)
+	// fmt.Println("routeParams ---", routeParams)
+	// fmt.Println("queryParams ---", queryParams)
+	// fmt.Println("stored credentials  = ", credentials)
 
 	// 6. Setting Response Headers and Status
 	w.Header().Set("yash", "shah") //response header yash is set to shah -response header yash is set to shah
 	w.WriteHeader(http.StatusOK)   //The response status is set to 200 OK.
 
 	// 7. Sending the Response
-	json.NewEncoder(w).Encode(cred) //cred struct is encoded back into JSON and sent as the response body (cred struct - 	which contains the Username and Password sent in the request)
+	json.NewEncoder(w).Encode(credentials) //cred struct is encoded back into JSON and sent as the response body (cred struct - 	which contains the Username and Password sent in the request)
+}
+
+/*
+Body test data:
+
+{
+
+    "username": "user1",
+
+    "password": "pass1"
 
 }
+
+{
+
+    "username": "user2",
+
+    "password": "pass2"
+
+}
+
+*/
 
 /*
 Key Concepts in the Code:
