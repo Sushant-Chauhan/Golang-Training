@@ -1,5 +1,5 @@
-// sets up a simple HTTP server using Gorilla Mux router to handle POST requests to the /api/v1/mux/{id} endpoint. Decodes a JSON body into a credential struct and prints headers, route parameters, and query parameters.
-
+// sets up a simple HTTP server using Gorilla Mux router to handle POST , GET, PUSH requests to the /api/v1/mux/{id} endpoint. Decodes a JSON body into a credential struct and prints headers, route parameters, and query parameters.
+// using map of struct to store
 package main
 
 import (
@@ -24,7 +24,8 @@ func main() {
 	http.ListenAndServe(":4000", router) //starts the HTTP server on port 4000, serving requests using the router.
 }
 
-var credentials = make(map[string]*credential) //// A global map to store credentials indexed by ID.
+// A global map to store credentials indexed by ID
+var credentials = make(map[string]*credential) ////Create a map where the key is a string and the value is a e value is pointer to a credential struct
 
 // muxDemo function - core of the API logic. It handles request and response
 func muxDemo(w http.ResponseWriter, r *http.Request) { // body , headers, routeParams, queryparam
