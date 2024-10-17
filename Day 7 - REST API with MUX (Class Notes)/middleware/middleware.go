@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -38,8 +39,8 @@ func Authentication(next http.Handler) http.Handler {
 			json.NewEncoder(w).Encode(errors.New("Token Expired").Error())
 			return
 		}
-		//requst --> claims
-		context.Set(r, "claim", claim)
+		//request --> claims
+		_ = context.WithValue(r.Context(), "claims", claim)
 		next.ServeHTTP(w, r)
 
 	})
@@ -50,11 +51,19 @@ func VerifyAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("VerifyAdmin Called")
 		//get
+		claim, ok := r.Context().Value("claims").(*Claims)
+		if !ok {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(errors.New("Invalid Order").Error())
+			return
+		}
 		if !claim.IsAdmin {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(errors.New("IsAdmin False").Error())
 			return
 		}
+		fmt.Println("admin verified ..")
+
 		next.ServeHTTP(w, r)
 
 	})
