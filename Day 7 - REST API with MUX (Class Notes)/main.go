@@ -3,6 +3,7 @@ package main
 //objective CRUD on USER with Credentials
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 	"user/components/user/controller"
@@ -17,18 +18,13 @@ func main() {
 	router.HandleFunc("/login", login).Methods(http.MethodPost) //POST URL  ---  http://localhost:4000/login
 	// router.PathPrefix("/api/v1")
 	subRouterForMiddleware1 := router.NewRoute().Subrouter()
-	// subRouterForMiddleware2 := router.NewRoute().Subrouter()
-	// subRouterForMiddleware1.PathPrefix("/user")
-	// subRouterForMiddleware2.PathPrefix("/user")
 	subRouterForMiddleware1.HandleFunc("/api/v1/user/", controller.GetUserByID).Methods(http.MethodGet) //1   GET URL ---  http://localhost:4000/api/v1/user/
-	// subRouterForMiddleware1.HandleFunc("/{id}", controller.GetUserByID).Methods(http.MethodGet) //2
-	// subRouterForMiddleware2.HandleFunc("/{id}", controller.UpdateUserByID).Methods(http.MethodPut) //3
-	// subRouterForMiddleware2.HandleFunc("/", controller.CreateUser).Methods(http.MethodPost)        //4 "/api/v1/user"
-	subRouterForMiddleware1.Use(middleware.VerifyAdmin)
-	// subRouterForMiddleware2.Use(middleware.Middleware2)
-	router.Use(middleware.Middleware0)
+	subRouterForMiddleware1.Use(middleware.Authentication)
+	// router.Use(middleware.Middleware0)
+	fmt.Println("Server started ...")
 	http.ListenAndServe(":4000", router)
 }
+
 func login(w http.ResponseWriter, r *http.Request) {
 	var user service.User
 	json.NewDecoder(r.Body).Decode(&user)
@@ -41,5 +37,3 @@ func login(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(claim)
 	//header Authorization
 }
-
-//middleware

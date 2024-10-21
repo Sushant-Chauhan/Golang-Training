@@ -1,6 +1,12 @@
+// folder :
+// components > user> service > userService.go
+
 package service
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 var allUsers []*User
 
@@ -13,49 +19,26 @@ type User struct {
 	IsAdmin  bool    `json:"isAdmin"`
 }
 
-// func GetAllUsers(limit, offset int) ([]*User, int, error) {
-// 	//business logic her
+func GetUserByID(userID int) (*User, error) {
+	fmt.Println("GetUserByID service called for user ID:", userID)
+	for _, user := range allUsers {
+		if user.ID == userID {
+			return user, nil
+		}
+	}
+	return nil, errors.New("user not found")
+}
 
-// 	return allUsers, 100, nil
-// }
-// func NewUser(
-// 	Username string,
-// 	Password string,
-// 	Name string,
-// 	Age float32,
-// 	IsAdmin bool) (*User, error) {
-// 	//validation
-// 	return nil, errors.New("")
-
-// 	// return &User{
-// 	// 	Username: Username,
-// 	// 	Password: Password,
-// 	// 	Name:     Name,
-// 	// 	Age:      Age,
-// 	// 	IsAdmin:  IsAdmin,
-// 	// }
-// }
-// func UpdateUserByID()  {
-// 		//getByiD
-// 		Username
-// 		Password
-// 		Name
-// 		Age
-// 		IsAdmin
-// 		// user.Update(Username
-// 		Password
-// 		Name
-// 		Age
-// 		IsAdmin
-// 	)
-// }
-// func (u *User)Update()  {
-// 	u.id = u.id
-// 	u.Age=Age
-// 	u.Age=Age
-// 	u.Age=Age
-// 	u.Age=Age
-// }
-func GetUserByID() {
-	fmt.Println("GetUserByID service Called")
+func NewUser(username, password, name string, age float32, isAdmin bool) (*User, error) {
+	// Add validation logic here if needed
+	user := &User{
+		ID:       len(allUsers) + 1, // simple ID generation logic
+		Username: username,
+		Password: password,
+		Name:     name,
+		Age:      age,
+		IsAdmin:  isAdmin,
+	}
+	allUsers = append(allUsers, user)
+	return user, nil
 }

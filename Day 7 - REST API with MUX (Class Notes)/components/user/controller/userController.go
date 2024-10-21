@@ -1,3 +1,6 @@
+// folder :
+// components > user> controller > userController.go 
+
 package controller
 
 import (
@@ -7,62 +10,30 @@ import (
 	"user/components/user/service"
 )
 
-// func GetAllUsers(w http.ResponseWriter, r *http.Request) {
-// 	//GET
-// 	//send recorde based on limit/pageSize and offset/pageNo
-// 	// 5 pageSize ; 3 pageNo //pagination
-// 	//limit and offset ??
-// 	//default value; queryParams??
-// 	//validation limit and offset
-
-// 	a, totalCount := service.GetAllUsers(5, 3)
-
-// 	//body,stuscode
-// 	//body {
-// 	// totalCount:,
-// 	// data:a[]
-// 	// }
-// 	//body : data:a[]
-// 	//headers:   x-total-count:totacCOunt // data exchange
-// }
-
-// func CreateUser(w http.ResponseWriter, r *http.Request) {
-// 	// // data Username
-// 	// Password
-// 	// Name
-// 	// Age
-// 	// IsAdmin
-// 	//body json {Username
-// 	// Password
-// 	// Name
-// 	// Age
-// 	// IsAdmin}
-
-// 	//validation
-// 	user, err := service.NewUser()
-// 	if err != nil {
-// 		//statuscode badReq
-// 		// return response with body as {errorMessage: err.Error()}
-// 		json.NewEncoder(w).Encode(err)
-// 		// http.Error(w,)
-// 		return
-// 	}
-
-// 	//res body -->user
-
-// }
-
 func GetUserByID(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("GetUserByID Controller Called")
-	service.GetUserByID()
-	json.NewEncoder(w).Encode(&service.User{})
+	// Extract user ID from the URL or request parameters
+	userID := 1 // Replace with actual extraction logic from the URL
+	user, err := service.GetUserByID(userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	json.NewEncoder(w).Encode(user)
 }
 
-// func UpdateUserByID(w http.ResponseWriter, r *http.Request) {
-// 	//validations
+func CreateUser(w http.ResponseWriter, r *http.Request) {
+	var user service.User
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
 
-// 	//service call
-// 	user:=&service.User{}
-// 	service.UpdateUserByID()
+	newUser, err := service.NewUser(user.Username, user.Password, user.Name, user.Age, user.IsAdmin)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-// }
+	json.NewEncoder(w).Encode(newUser)
+}

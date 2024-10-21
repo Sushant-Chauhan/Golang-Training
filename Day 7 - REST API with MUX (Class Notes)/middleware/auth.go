@@ -1,5 +1,7 @@
-package middleware
+// folder :
+// middleware > auth.go
 
+package middleware
 import (
 	"time"
 
@@ -15,16 +17,14 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-func NewClaims(
-	ID int,
-	Username string,
-	IsAdmin bool, exirationDate time.Time) *Claims {
+func NewClaims(ID int, Username string, IsAdmin bool, expirationDate time.Time) *Claims {
 	return &Claims{
 		ID:       ID,
 		Username: Username,
 		IsAdmin:  IsAdmin,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: exirationDate.Unix()},
+			ExpiresAt: expirationDate.Unix(),
+		},
 	}
 }
 
